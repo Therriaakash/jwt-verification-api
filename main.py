@@ -1,6 +1,7 @@
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import jwt
 
@@ -52,9 +53,12 @@ async def verify_token(request: VerifyRequest):
             },
         )
 
-        # Enforce the exact assigned audience.
+        # Require the audience claim to match exactly.
         if claims.get("aud") != AUDIENCE:
-            raise jwt.InvalidAudienceError("Audience must match exactly")
+            return JSONResponse(
+                status_code=401,
+                content={"valid": False},
+            )
 
         return VerifyResponse(
             valid=True,
@@ -64,9 +68,9 @@ async def verify_token(request: VerifyRequest):
         )
 
     except Exception:
-        raise HTTPException(
+        return JSONResponse(
             status_code=401,
-            detail={"valid": False},
+            content={"valid": False},
         )
 
 
